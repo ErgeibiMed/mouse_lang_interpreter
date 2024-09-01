@@ -1,5 +1,5 @@
 [package]
-name = "mouse_lg_intr"
+name = "mouse_lang_interpreter"
 version = "0.1.0"
 authors = ["Ergeibi Mohamed <ergeibi.mohamed@gmail.com>"]
 edition = "2021"

@@ -1,21 +1,3 @@
-"Hello world."
-$+- *
-/\
-? 	?'
-! 	!'
-' 	" 	:
-. < 	= 	>
-[
-]
-(
-)
-^
-#
-@
-%
-,
-;
-{
-}
-~
-$
+"Hello world." ~ prints 'Hello world.'
+$              ~ end of the program
+
