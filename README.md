@@ -2,7 +2,7 @@
 
 ## Description
 
- - Read more about [mousethe programming language](https://en.wikipedia.org/wiki/Mouse_(programming_language))
+ - Read more about [mouse the programming language](https://en.wikipedia.org/wiki/Mouse_(programming_language))
 
 ## Quickstart
 
@@ -17,4 +17,4 @@
  [anyhow](https://crates.io/crates/anyhow)
 
 ## License
-Please read the [LICENSE-MIT](https://github.com/ErgeibiMed/ccwordcount/blob/main/LICENSE.txt) file in this repository for more information.
+Please read the [LICENSE-MIT](https://github.com/ErgeibiMed/mouse_lang_interpreter/blob/main/LICENSE.txt) file in this repository for more information.
