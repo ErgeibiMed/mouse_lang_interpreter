@@ -142,7 +142,8 @@ impl Lexer {
                         continue;
                     }
                     '~' => {
-                        self.tokens.push(Token::Symbole(Symbol::Tilde));
+                        //self.tokens.push(Token::Symbole(Symbol::Tilde));
+                        //we ignore comments
 
                         continue;
                     }
@@ -150,10 +151,11 @@ impl Lexer {
                         self.tokens.push(Token::Charcter(a_token.unwrap()));
                         continue;
                     }
-                    _ => {
-                        self.tokens.push(Token::Identifier(a_token.unwrap()));
+                    '0'..='9' => {
+                        self.tokens.push(Token::Number(a_token.unwrap()));
                         continue;
                     }
+                    _ => unreachable!("this token is not valid" ),
                 };
             }
         }
@@ -168,7 +170,7 @@ impl Lexer {
 pub enum Token {
     Symbole(Symbol),
     Charcter(char),
-    Identifier(char),
+    Number(char),
 }
 
 #[derive(Debug, Clone)]
@@ -200,5 +202,4 @@ pub enum Symbol {
     SemiColon,          //         ;
     LeftBracket,        //         {
     RightBracket,       //         }
-    Tilde,              //         ~
 }
