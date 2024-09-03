@@ -1,0 +1,4 @@
+1 N:              ~ initialize N to 1
+( N. N. * !     ~ begin loop; print squares of numbers
+  N. 10 - 0 < ^   ~ exit loop if N >= 10
+  N. 1 + N: ) $   ~ increment N and repeat loop
