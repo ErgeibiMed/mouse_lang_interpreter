@@ -14,7 +14,7 @@ fn strip_comment(s:&str)->String{
                 result.push(r);
         }
     }
-    result.split_whitespace().collect::<String>()
+    result
 }
 impl Lexer {
     pub fn new(input: &str) -> Self {
@@ -33,6 +33,10 @@ impl Lexer {
                 break;
             } else {
                 match a_token.unwrap() {
+                    ' ' => {
+                    self.tokens.push(Token::Symbole(Symbol::WhiteSpace));
+                        continue;
+                      }
                     '$' => {
                         self.tokens.push(Token::Symbole(Symbol::DollarSign));
                         continue;
@@ -175,6 +179,7 @@ pub enum Token {
 
 #[derive(Debug, Clone)]
 pub enum Symbol {
+    WhiteSpace,
     DollarSign,         //         $
     Addition,           //         +
     Substraction,       //         -
