@@ -1,185 +1,77 @@
-#[derive(Debug, Clone)]
-pub struct Lexer {
-    pub source_file: String,
-    pub tokens: Vec<Token>,
+use miette::{Error};
+use std::usize;
+
+pub struct Lexer<'de> {
+    whole: &'de str,
+    rest : &'de str,
+    byte : usize,
+    peeked: Option<Result<Token<'de>, miette::Error>>,
 }
-fn strip_comment(s:&str)->String{
-    let mut result = String::new();
-    let f_line= s.lines();
-    'outer:for i in f_line {
-        for r in i.chars(){
-            if r=='~' {
-                result.push(r);
-                continue 'outer ;}
-                result.push(r);
-        }
-    }
-    result
-}
-impl Lexer {
-    pub fn new(input: &str) -> Self {
+impl<'de> Lexer<'de> {
+    pub fn new(input: &'de str) -> Self {
         Self {
-            source_file: input.to_string(),
-            tokens: Vec::new(),
-        }
-    }
-
-    pub fn chop_token(&mut self) -> Self {
-        let str_of_tokens = strip_comment(&self.source_file);
-        let mut all_tokens = str_of_tokens.chars();
-        loop {
-            let a_token = all_tokens.next();
-            if a_token.is_none() {
-                break;
-            } else {
-                match a_token.unwrap() {
-                    ' ' => {
-                    self.tokens.push(Token::Symbole(Symbol::WhiteSpace));
-                        continue;
-                      }
-                    '$' => {
-                        self.tokens.push(Token::Symbole(Symbol::DollarSign));
-                        continue;
-                    }
-                    '+' => {
-                        self.tokens.push(Token::Symbole(Symbol::Addition));
-                        continue;
-                    }
-                    '-' => {
-                        self.tokens.push(Token::Symbole(Symbol::Substraction));
-                        continue;
-                    }
-                    '*' => {
-                        self.tokens.push(Token::Symbole(Symbol::Multiplication));
-                        continue;
-                    }
-                    '/' => {
-                        self.tokens.push(Token::Symbole(Symbol::Division));
-                        continue;
-                    }
-                    '\\' => {
-                        self.tokens.push(Token::Symbole(Symbol::AntiSlash));
-                        continue;
-                    }
-                    '?' => {
-                        self.tokens.push(Token::Symbole(Symbol::QuestionMark));
-                        continue;
-                    }
-                    '!' => {
-                        self.tokens.push(Token::Symbole(Symbol::Bang));
-                        continue;
-                    }
-                    '"' => {
-                        self.tokens.push(Token::Symbole(Symbol::QuotationMark));
-                        continue;
-                    }
-                    '\'' => {
-                        self.tokens.push(Token::Symbole(Symbol::Apostrophe));
-                        continue;
-                    }
-                    ':' => {
-                        self.tokens.push(Token::Symbole(Symbol::Colon));
-                        continue;
-                    }
-                    '.' => {
-                        self.tokens.push(Token::Symbole(Symbol::Point));
-                        continue;
-                    }
-                    '<' => {
-                        self.tokens.push(Token::Symbole(Symbol::LessThan));
-                        continue;
-                    }
-                    '=' => {
-                        self.tokens.push(Token::Symbole(Symbol::Equal));
-                        continue;
-                    }
-                    '>' => {
-                        self.tokens.push(Token::Symbole(Symbol::GreaterThan));
-                        continue;
-                    }
-                    '[' => {
-                        self.tokens.push(Token::Symbole(Symbol::LeftSquareBracket));
-                        continue;
-                    }
-                    ']' => {
-                        self.tokens.push(Token::Symbole(Symbol::RightSquareBracket));
-                        continue;
-                    }
-                    '(' => {
-                        self.tokens.push(Token::Symbole(Symbol::LeftParnathesis));
-                        continue;
-                    }
-                    ')' => {
-                        self.tokens.push(Token::Symbole(Symbol::RightParnathesis));
-                        continue;
-                    }
-                    '^' => {
-                        self.tokens.push(Token::Symbole(Symbol::Caret));
-                        continue;
-                    }
-                    '#' => {
-                        self.tokens.push(Token::Symbole(Symbol::Pound));
-                        continue;
-                    }
-                    '@' => {
-                        self.tokens.push(Token::Symbole(Symbol::AtSign));
-                        continue;
-                    }
-                    '%' => {
-                        self.tokens.push(Token::Symbole(Symbol::Ampersand));
-                        continue;
-                    }
-                    ',' => {
-                        self.tokens.push(Token::Symbole(Symbol::Comma));
-                        continue;
-                    }
-                    ';' => {
-                        self.tokens.push(Token::Symbole(Symbol::SemiColon));
-                        continue;
-                    }
-                    '{' => {
-                        self.tokens.push(Token::Symbole(Symbol::LeftBracket));
-                        continue;
-                    }
-                    '}' => {
-                        self.tokens.push(Token::Symbole(Symbol::RightBracket));
-                        continue;
-                    }
-                    '~' => {
-                        //self.tokens.push(Token::Symbole(Symbol::Tilde));
-                        //we ignore comments
-
-                        continue;
-                    }
-                    'a'..='z' | 'A'..='Z' => {
-                        self.tokens.push(Token::Charcter(a_token.unwrap()));
-                        continue;
-                    }
-                    '0'..='9' => {
-                        self.tokens.push(Token::Number(a_token.unwrap()));
-                        continue;
-                    }
-                    _ => unreachable!("this token is not valid" ),
-                };
-            }
-        }
-        Self {
-            source_file: self.source_file.clone(),
-            tokens: self.tokens.clone(),
+            whole: input,
+            rest: input,
+            byte : 0,
+            peeked : None
         }
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Token {
-    Symbole(Symbol),
-    Charcter(char),
-    Number(char),
+impl<'de> Iterator for Lexer<'de> {
+    type Item = Result<Token<'de>, Error>;
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut chars = self.rest.chars();
+        let c = chars.next()?;
+        self.byte+=c.len_utf8();
+        self.rest = chars.as_str();
+        match c {
+            '$' => return Some(Ok(Token::DollarSign)),
+            '+' => return Some(Ok(Token::Addition)),
+            '-' => return Some(Ok(Token::Substraction)),
+            '*' => return Some(Ok(Token::Multiplication)),
+            '/' => return Some(Ok(Token::Division)),
+            '\\' => return Some(Ok(Token::AntiSlash)),
+            '?' => return Some(Ok(Token::QuestionMark)),
+            '!' => return Some(Ok(Token::Bang)),
+            '"' => return Some(Ok(Token::QuotationMark)),
+            '\'' => return Some(Ok(Token::Apostrophe)),
+            ':' => return Some(Ok(Token::Colon)),
+            '.' => return Some(Ok(Token::Point)),
+            '<' => return Some(Ok(Token::LessThan)),
+            '=' => return Some(Ok(Token::Equal)),
+            '>' => return Some(Ok(Token::GreaterThan)),
+            '[' => return Some(Ok(Token::LeftSquareBracket)),
+            ']' => return Some(Ok(Token::RightSquareBracket)),
+            '(' => return Some(Ok(Token::LeftParnathesis)),
+            ')' => return Some(Ok(Token::RightParnathesis)),
+            '^' => return Some(Ok(Token::Caret)),
+            '#' => return Some(Ok(Token::Pound)),
+            '@' => return Some(Ok(Token::AtSign)),
+            '%' => return Some(Ok(Token::Ampersand)),
+            ',' => return Some(Ok(Token::Comma)),
+            ';' => return Some(Ok(Token::SemiColon)),
+            '{' => return Some(Ok(Token::LeftBracket)),
+            '}' => return Some(Ok(Token::RightBracket)),
+            '~' => return Some(Ok(Token::Tilde)),
+                //we ignore comments
+
+            //'a'..='z' | 'A'..='Z' => {
+            //    return Some(Ok(Token::Charcter(a_token.unwrap()));
+
+            //}
+            //'0'..='9' => {
+            //    return Some(Ok(Token::Number(a_token.unwrap()));
+
+            //}
+            _ => unreachable!("this token is not valid"),
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
-pub enum Symbol {
-    WhiteSpace,
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Token<'de> {
     DollarSign,         //         $
     Addition,           //         +
     Substraction,       //         -
@@ -206,5 +98,7 @@ pub enum Symbol {
     Comma,              //         ,
     SemiColon,          //         ;
     LeftBracket,        //         {
-    RightBracket,       //         }
+    Tilde,
+    RightBracket, //         }
+    Literal(&'de str),
 }
