@@ -5,7 +5,7 @@ authors = ["Ergeibi Mohamed <ergeibi.mohamed@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-miette = "7.2.0"
+miette = { version = "7.2.0", features = ["fancy"] }
 
 [profile.dev]
 opt-level = 1

@@ -1,19 +1,17 @@
-use miette::{Error};
-use std::usize;
+use miette::Error;
+use std::{fmt::Display, usize};
 
 pub struct Lexer<'de> {
     whole: &'de str,
-    rest : &'de str,
-    byte : usize,
-    peeked: Option<Result<Token<'de>, miette::Error>>,
+    rest: &'de str,
+    byte: usize,
 }
 impl<'de> Lexer<'de> {
     pub fn new(input: &'de str) -> Self {
         Self {
             whole: input,
             rest: input,
-            byte : 0,
-            peeked : None
+            byte: 0,
         }
     }
 }
@@ -23,7 +21,7 @@ impl<'de> Iterator for Lexer<'de> {
     fn next(&mut self) -> Option<Self::Item> {
         let mut chars = self.rest.chars();
         let c = chars.next()?;
-        self.byte+=c.len_utf8();
+        self.byte += c.len_utf8();
         self.rest = chars.as_str();
         match c {
             '$' => return Some(Ok(Token::DollarSign)),
@@ -54,7 +52,7 @@ impl<'de> Iterator for Lexer<'de> {
             '{' => return Some(Ok(Token::LeftBracket)),
             '}' => return Some(Ok(Token::RightBracket)),
             '~' => return Some(Ok(Token::Tilde)),
-                //we ignore comments
+            //we ignore comments
 
             //'a'..='z' | 'A'..='Z' => {
             //    return Some(Ok(Token::Charcter(a_token.unwrap()));
@@ -68,7 +66,6 @@ impl<'de> Iterator for Lexer<'de> {
         }
     }
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token<'de> {
@@ -101,4 +98,39 @@ pub enum Token<'de> {
     Tilde,
     RightBracket, //         }
     Literal(&'de str),
+}
+impl<'de> Display for Token<'de> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::DollarSign => write!(f, " $ "),
+            Token::Addition => write!(f, " + "),
+            Token::Substraction => write!(f, " - "),
+            Token::Multiplication => write!(f, " * "),
+            Token::Division => write!(f, " / "),
+            Token::AntiSlash => write!(f, r" \ "),
+            Token::QuestionMark => write!(f, " ? "),
+            Token::Bang => write!(f, " ! "),
+            Token::Apostrophe => write!(f, " ' "),
+            Token::QuotationMark => write!(f, " \" "),
+            Token::Colon => write!(f, " : "),
+            Token::Point => write!(f, " . "),
+            Token::LessThan => write!(f, " < "),
+            Token::Equal => write!(f, " = "),
+            Token::GreaterThan => write!(f, " > "),
+            Token::LeftSquareBracket => write!(f, " [ "),
+            Token::RightSquareBracket => write!(f, " ] "),
+            Token::LeftParnathesis => write!(f, " ( "),
+            Token::RightParnathesis => write!(f, " ) "),
+            Token::Caret => write!(f, " ^ "),
+            Token::Pound => write!(f, " # "),
+            Token::AtSign => write!(f, " @ "),
+            Token::Ampersand => write!(f, " % "),
+            Token::Comma => write!(f, " , "),
+            Token::SemiColon => write!(f, " ; "),
+            Token::LeftBracket => write!(f, " {{ "),
+            Token::Tilde => write!(f, " ~ "),
+            Token::RightBracket => write!(f, " }} "),
+            Token::Literal(_) => write!(f, "not implemeneted yet!"),
+        }
+    }
 }
