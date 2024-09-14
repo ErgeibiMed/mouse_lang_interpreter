@@ -19,21 +19,28 @@ impl<'de> Lexer<'de> {
 impl<'de> Iterator for Lexer<'de> {
     type Item = Result<Token<'de>, Error>;
     fn next(&mut self) -> Option<Self::Item> {
+        loop{
         let mut chars = self.rest.chars();
         let c = chars.next()?;
         self.byte += c.len_utf8();
         self.rest = chars.as_str();
-        match c {
+
+        enum Started{
+            Input,
+            Character,
+            String,
+            Number,
+            IDent,
+        }
+         let started = match c {
+            ' ' => {continue;  },//no action
             '$' => return Some(Ok(Token::DollarSign)),
             '+' => return Some(Ok(Token::Addition)),
             '-' => return Some(Ok(Token::Substraction)),
             '*' => return Some(Ok(Token::Multiplication)),
             '/' => return Some(Ok(Token::Division)),
             '\\' => return Some(Ok(Token::AntiSlash)),
-            '?' => return Some(Ok(Token::QuestionMark)),
             '!' => return Some(Ok(Token::Bang)),
-            '"' => return Some(Ok(Token::QuotationMark)),
-            '\'' => return Some(Ok(Token::Apostrophe)),
             ':' => return Some(Ok(Token::Colon)),
             '.' => return Some(Ok(Token::Point)),
             '<' => return Some(Ok(Token::LessThan)),
@@ -51,21 +58,63 @@ impl<'de> Iterator for Lexer<'de> {
             ';' => return Some(Ok(Token::SemiColon)),
             '{' => return Some(Ok(Token::LeftBracket)),
             '}' => return Some(Ok(Token::RightBracket)),
-            '~' => return Some(Ok(Token::Tilde)),
-            //we ignore comments
-
-            //'a'..='z' | 'A'..='Z' => {
-            //    return Some(Ok(Token::Charcter(a_token.unwrap()));
-
-            //}
-            //'0'..='9' => {
-            //    return Some(Ok(Token::Number(a_token.unwrap()));
-
-            //}
+            '~' => {
+                    let endline= self.rest.find('\n').unwrap();
+                     let comment = &self.rest[c.len_utf8()+1..endline+c.len_utf8()-1];
+                     self.byte+=comment.len();
+                    self.rest=&self.rest[self.byte..];
+                    //self.byte+=
+                    return Some(Ok(Token::Tilde))
+                },
+            '?' => Started::Input,                  //return Some(Ok(Token::QuestionMark)),
+            '"' =>  Started::String,                //return Some(Ok(Token::QuotationMark)),
+            '\'' => Started::Character,                // return Some(Ok(Token::Apostrophe)),
+            '0'..='9' => Started::Number,
+            'a'..='z'|'A'..='Z' => Started::IDent,
             _ => unreachable!("this token is not valid"),
+        };
+
+            match started{
+                Started::String =>{ if let Some(end)= self.rest.find('"'){
+                let literal=&self.rest[c.len_utf8()-1..end+c.len_utf8()-1];
+                self.byte+=literal.len();
+                self.rest=&self.rest[self.byte..];
+
+                return Some(Ok(Token::Literal(literal)));
+            }else {
+
+                    }
+                },
+                Started::IDent =>{
+                       let end= self.rest.find(' ').unwrap();
+                      let identifier= &self.rest[c.len_utf8()..end+c.len_utf8()-1];
+                      self.byte+=identifier.len();
+                      self.rest=&self.rest[self.byte..];
+                    return Some(Ok(Token::VarIdentifier(identifier)));
+                },
+               Started::Character => return Some(Ok(Token::Char(c))),
+               Started::Input => {if c.is_digit(10){
+                              return Some(Ok(Token::InputNumber(c.to_digit(10).unwrap() as usize)));
+                           }else {return Some(Ok(Token::InputChar(c)))}
+            },
+              Started::Number => { let mut whole:Vec<char>=Vec::new();
+                              whole.push(c);
+                       let rst = chars.take_while(|v| v.is_digit(10)).collect::<Vec<char>>();
+                       for i in 0..rst.len(){
+                      whole.push(rst[i]);
+                }
+                     self.byte+=whole.len();
+                     self.rest=&self.rest[self.byte..];
+                   let whole = whole.iter().collect::<String>();
+
+                return Some(Ok(Token::Number(whole.parse::<usize>().unwrap())));
+            },
+            };
+        return None;
         }
     }
-}
+    }
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token<'de> {
@@ -75,10 +124,7 @@ pub enum Token<'de> {
     Multiplication,     //         *
     Division,           //         /
     AntiSlash,          //         \
-    QuestionMark,       //         ?
     Bang,               //
-    Apostrophe,         //         '
-    QuotationMark,      //         "
     Colon,              //         :
     Point,              //         .
     LessThan,           //         <
@@ -97,7 +143,13 @@ pub enum Token<'de> {
     LeftBracket,        //         {
     Tilde,
     RightBracket, //         }
+    VarIdentifier(&'de str),
     Literal(&'de str),
+    Char(char),
+    Number(usize),
+    InputChar(char),
+    InputNumber(usize),
+
 }
 impl<'de> Display for Token<'de> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -108,10 +160,7 @@ impl<'de> Display for Token<'de> {
             Token::Multiplication => write!(f, " * "),
             Token::Division => write!(f, " / "),
             Token::AntiSlash => write!(f, r" \ "),
-            Token::QuestionMark => write!(f, " ? "),
             Token::Bang => write!(f, " ! "),
-            Token::Apostrophe => write!(f, " ' "),
-            Token::QuotationMark => write!(f, " \" "),
             Token::Colon => write!(f, " : "),
             Token::Point => write!(f, " . "),
             Token::LessThan => write!(f, " < "),
@@ -130,7 +179,14 @@ impl<'de> Display for Token<'de> {
             Token::LeftBracket => write!(f, " {{ "),
             Token::Tilde => write!(f, " ~ "),
             Token::RightBracket => write!(f, " }} "),
-            Token::Literal(_) => write!(f, "not implemeneted yet!"),
+            Token::Literal(s) => write!(f,"\"{}\"",s),
+            Token::VarIdentifier(i) => write!(f,"{}",i),
+            Token::Char(c) => write!(f,"'{}",c),
+            Token::Number(u) => write!(f,"{}",u),
+            Token::InputChar(c) => write!(f,"?'{}",c),
+            Token::InputNumber(u) => write!(f,"?{}",u),
+
+
         }
     }
 }
