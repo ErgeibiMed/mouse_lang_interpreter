@@ -27,7 +27,7 @@ impl<'de> Iterator for Lexer<'de> {
         let mut chars = self.rest.chars();
         let c = chars.next()?;
         self.byte += c.len_utf8();
-        self.rest = chars.as_str();
+        self.rest = &self.whole[self.byte..];
 
         enum Started{
             Input,
@@ -37,7 +37,7 @@ impl<'de> Iterator for Lexer<'de> {
             IDent,
         }
          let started = match c {
-            ' '=> return Some(Ok(Token::Whitespace)),
+            ' '=> continue,
             '$' => return Some(Ok(Token::DollarSign)),
             '+' => return Some(Ok(Token::Addition)),
             '-' => return Some(Ok(Token::Substraction)),
@@ -65,8 +65,8 @@ impl<'de> Iterator for Lexer<'de> {
             '~' => {
                 let endline= self.rest.find('\n').unwrap();
                 let comment = &self.rest[c.len_utf8()..endline];
-                self.byte+=endline+c.len_utf8();
-                self.rest=&self.whole[c.len_utf8()+self.byte..];
+                self.byte+=endline+c.len_utf8()-1;
+                self.rest=&self.whole[c.len_utf8()+self.byte-1..];
                 //self.byte+=
                 return Some(Ok(Token::Tilde(&comment)))
             },
@@ -92,11 +92,16 @@ impl<'de> Iterator for Lexer<'de> {
                     }
                 },
                 Started::IDent =>{
-                       let end= self.rest.find(' ').unwrap();
-                      let identifier= &self.rest[c.len_utf8()-1..end];
-                      self.byte+=identifier.len()+c.len_utf8();
-                      self.rest=&self.whole[self.byte-1..];
-                    return Some(Ok(Token::VarIdentifier(identifier)));
+                    let mut whole:Vec<char>=Vec::new();
+                    whole.push(c);
+                    let rst = chars.take_while(|v| v.is_digit(10) || v.is_alphabetic()).collect::<Vec<char>>();
+                    for i in 0..rst.len(){
+                        whole.push(rst[i]);
+                    }
+                    self.byte+=whole.len()-1;
+                    self.rest=&self.whole[self.byte..];
+
+                    return Some(Ok(Token::VarIdentifier(&self.whole[self.byte-whole.len() ..self.byte])));
                 },
                Started::Character => return Some(Ok(Token::Char(c))),
                Started::Input => {if c.is_digit(10){
@@ -125,7 +130,7 @@ impl<'de> Iterator for Lexer<'de> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token<'de> {
     EOF,
-    Whitespace,
+    //Whitespace,
     DollarSign,         //         $
     Addition,           //         +
     Substraction,       //         -
@@ -162,39 +167,39 @@ pub enum Token<'de> {
 impl<'de> Display for Token<'de> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::EOF=> write!(f,"end of file"),
-            Token::DollarSign => write!(f, "$"),
-            Token::Whitespace => write!(f, "Whitespace"),
-            Token::Addition => write!(f, "+"),
-            Token::Substraction => write!(f, "-"),
-            Token::Multiplication => write!(f, "*"),
-            Token::Division => write!(f, "/"),
-            Token::AntiSlash => write!(f, r"\"),
-            Token::Bang => write!(f, "!"),
-            Token::Colon => write!(f, ":"),
-            Token::Point => write!(f, "."),
-            Token::LessThan => write!(f, "<"),
-            Token::Equal => write!(f, "="),
-            Token::GreaterThan => write!(f, ">"),
-            Token::LeftSquareBracket => write!(f, "["),
-            Token::RightSquareBracket => write!(f, "]"),
-            Token::LeftParnathesis => write!(f, "("),
-            Token::RightParnathesis => write!(f, ")"),
-            Token::Caret => write!(f, "^"),
-            Token::Pound => write!(f, "#"),
-            Token::AtSign => write!(f, "@"),
-            Token::Ampersand => write!(f, "%"),
-            Token::Comma => write!(f, ","),
-            Token::SemiColon => write!(f, ";"),
-            Token::LeftBracket => write!(f, "{{"),
-            Token::Tilde(s) => write!(f, "~comment_is->{}",s),
-            Token::RightBracket => write!(f, "}}"),
-            Token::Literal(s) => write!(f,"\"{}\"",s),
-            Token::VarIdentifier(i) => write!(f,"{}",i),
-            Token::Char(c) => write!(f,"'{}",c),
-            Token::Number(u) => write!(f,"{}",u),
-            Token::InputChar(c) => write!(f,"?'{}",c),
-            Token::InputNumber(u) => write!(f,"?{}",u),
+            Token::EOF=> write!(f,"EOF->end of file"),
+            Token::DollarSign => write!(f, "DollarSign->$"),
+            //Token::Whitespace => write!(f, "Whitespace->Whitespace"),
+            Token::Addition => write!(f, "Addition->+"),
+            Token::Substraction => write!(f, "Substraction->-"),
+            Token::Multiplication => write!(f, "Multiplication->*"),
+            Token::Division => write!(f, "Division->/"),
+            Token::AntiSlash => write!(f, r"AntiSlash->\"),
+            Token::Bang => write!(f, "Bang->!"),
+            Token::Colon => write!(f, "Colon->:"),
+            Token::Point => write!(f, "Point->."),
+            Token::LessThan => write!(f, "LessThan-><"),
+            Token::Equal => write!(f, "Equal->="),
+            Token::GreaterThan => write!(f, "GreaterThan->>"),
+            Token::LeftSquareBracket => write!(f, "LeftSquareBracket->["),
+            Token::RightSquareBracket => write!(f, "RightSquareBracket->]"),
+            Token::LeftParnathesis => write!(f, "LeftParnathesis->("),
+            Token::RightParnathesis => write!(f, "RightParnathesis->)"),
+            Token::Caret => write!(f, "Caret->^"),
+            Token::Pound => write!(f, "Pound->#"),
+            Token::AtSign => write!(f, "AtSign->@"),
+            Token::Ampersand => write!(f, "Ampersand->%"),
+            Token::Comma => write!(f, "Comma->,"),
+            Token::SemiColon => write!(f, "SemiColon->;"),
+            Token::LeftBracket => write!(f, "LeftBracket->{{"),
+            Token::Tilde(s) => write!(f, "Tilde->~comment_is->{}",s),
+            Token::RightBracket => write!(f, "RightBracket->}}"),
+            Token::Literal(s) => write!(f,"Literal->\"{}\"",s),
+            Token::VarIdentifier(i) => write!(f,"VarIdentifier->{}",i),
+            Token::Char(c) => write!(f,"Char->'{}",c),
+            Token::Number(u) => write!(f,"Number->{}",u),
+            Token::InputChar(c) => write!(f,"InputChar->?'{}",c),
+            Token::InputNumber(u) => write!(f,"InputNumber->?{}",u),
 
 
         }
