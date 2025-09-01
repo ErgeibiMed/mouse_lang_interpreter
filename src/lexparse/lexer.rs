@@ -4,6 +4,7 @@ pub struct Lexer<'de> {
     whole: &'de str,
     rest: &'de str,
     byte: usize,
+    line_number: usize,
 }
 impl<'de> Lexer<'de> {
     pub fn new(input: &'de str) -> Self {
@@ -11,24 +12,43 @@ impl<'de> Lexer<'de> {
             whole: input,
             rest: input,
             byte: 0,
+            line_number: 1,
         }
     }
 
-    pub fn lex(&mut self) -> Vec<Result<Token, ()>> {
+    pub fn lex(&mut self) -> Vec<Result<TokenInfo, LexerError>> {
         self.into_iter().collect()
     }
 }
 
+pub struct TokenInfo<'de> {
+    pub token: Token<'de>,
+    pub pos: usize,
+    pub line: usize,
+}
+
+#[derive(Debug)]
+pub struct LexerError {
+    pub lex_err: String,
+    pub line: usize,
+    pub pos: usize,
+}
+
 impl<'de> Iterator for Lexer<'de> {
-    type Item = Result<Token<'de>, ()>;
+    type Item = Result<TokenInfo<'de>, LexerError>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.byte >= self.whole.len() {
-            println!("reached the end of the file");
-            return Some(Ok(Token::EOF));
-        }
-        loop {
-            let mut chars = self.rest.chars();
-            let c = chars.next()?;
+        //}
+        //loop {
+        let mut chars = self.rest.chars();
+        while let Some(c) = chars.next() {
+            if self.byte >= self.whole.len() {
+                println!("reached the end of the file");
+                return Some(Ok(TokenInfo {
+                    token: Token::EOF,
+                    pos: self.byte - 1,
+                    line: self.line_number,
+                }));
+            }
             self.byte += c.len_utf8();
             self.rest = &self.whole[self.byte..];
 
@@ -39,61 +59,241 @@ impl<'de> Iterator for Lexer<'de> {
                 Number,
                 IDent,
             }
-            let started = match c {
-                ' ' => continue,
-                '$' => return Some(Ok(Token::DollarSign)),
-                '+' => return Some(Ok(Token::Addition)),
-                '-' => return Some(Ok(Token::Substraction)),
-                '*' => return Some(Ok(Token::Multiplication)),
-                '/' => return Some(Ok(Token::Division)),
-                '\\' => return Some(Ok(Token::AntiSlash)),
-                '!' => return Some(Ok(Token::Bang)),
-                ':' => return Some(Ok(Token::Colon)),
-                '.' => return Some(Ok(Token::Point)),
-                '<' => return Some(Ok(Token::LessThan)),
-                '=' => return Some(Ok(Token::Equal)),
-                '>' => return Some(Ok(Token::GreaterThan)),
-                '[' => return Some(Ok(Token::LeftSquareBracket)),
-                ']' => return Some(Ok(Token::RightSquareBracket)),
-                '(' => return Some(Ok(Token::LeftParnathesis)),
-                ')' => return Some(Ok(Token::RightParnathesis)),
-                '^' => return Some(Ok(Token::Caret)),
-                '#' => return Some(Ok(Token::Pound)),
-                '@' => return Some(Ok(Token::AtSign)),
-                '%' => return Some(Ok(Token::Ampersand)),
-                ',' => return Some(Ok(Token::Comma)),
-                ';' => return Some(Ok(Token::SemiColon)),
-                '{' => return Some(Ok(Token::LeftBracket)),
-                '}' => return Some(Ok(Token::RightBracket)),
+            let start = match c {
+                ' ' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Whitespace,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '\n' => {
+                    self.line_number += 1;
+                    continue;
+                }
+                '$' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::DollarSign,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '+' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Addition,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '-' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Substraction,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '*' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Multiplication,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '/' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Division,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '\\' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::AntiSlash,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '!' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Bang,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                ':' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Colon,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '.' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Point,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '<' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::LessThan,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '=' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Equal,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '>' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::GreaterThan,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '[' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::LeftSquareBracket,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                ']' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::RightSquareBracket,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '(' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::LeftParnathesis,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                ')' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::RightParnathesis,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '^' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Caret,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '#' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Pound,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '@' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::AtSign,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '%' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Ampersand,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                ',' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Comma,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                ';' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::SemiColon,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '{' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::LeftBracket,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
+                '}' => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::RightBracket,
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
                 '~' => {
                     let endline = self.rest.find('\n').unwrap();
+                    //Comment always strat with tilde
+                    //and end at the newline
+                    //the comment doesnt include tilde
+                    let starting_pos = self.byte - 1;
                     let comment = &self.rest[c.len_utf8()..endline];
-                    self.byte += endline + c.len_utf8() - 1;
-                    self.rest = &self.whole[c.len_utf8() + self.byte - 1..];
-                    //self.byte+=
-                    return Some(Ok(Token::Tilde(&comment)));
+                    self.byte += comment.len() + c.len_utf8();
+                    self.rest = &self.whole[self.byte..];
+                    self.line_number += 1;
+                    return Some(Ok(TokenInfo {
+                        token: Token::Tilde(&comment),
+                        pos: starting_pos,
+                        line: self.line_number,
+                    }));
                 }
                 '?' => Started::Input,  //return Some(Ok(Token::QuestionMark)),
                 '"' => Started::String, //return Some(Ok(Token::QuotationMark)),
                 '\'' => Started::Character, // return Some(Ok(Token::Apostrophe)),
                 '0'..='9' => Started::Number,
                 'a'..='z' | 'A'..='Z' => Started::IDent,
-                _ => {
-                    //println!("End of File {}",c);
-                    continue;
+                unkown_token => {
+                    let uknt = unkown_token.is_ascii_punctuation();
+                    let err = format!("UnknownToken ({uknt}) at pos {pos}", pos = self.byte,);
+                    return Some(Err(LexerError {
+                        lex_err: err,
+                        line: self.line_number,
+                        pos: self.byte - 1,
+                    }));
                 }
             };
 
-            match started {
+            match start {
                 Started::String => {
                     if let Some(end) = self.rest.find('"') {
-                        let literal = &self.rest[c.len_utf8() - 1..end];
-                        self.byte += literal.len() + c.len_utf8();
+                        let literal = &self.rest[self.byte - 1..end];
+                        let starting_pos = self.byte - 1;
+                        self.byte += literal.len() + 1;
                         self.rest = &self.whole[self.byte..];
 
-                        return Some(Ok(Token::Literal(literal)));
+                        return Some(Ok(TokenInfo {
+                            token: Token::Literal(literal),
+                            pos: starting_pos,
+                            line: self.line_number,
+                        }));
                     } else {
-                        //miette::errror here not implemented yet!
+                        let err = format!(
+                            "string is not properly quoted at position {pos}",
+                            pos = self.byte,
+                        );
+                        return Some(Err(LexerError {
+                            lex_err: err,
+                            line: self.line_number,
+                            pos: self.byte - 1,
+                        }));
                     }
                 }
                 Started::IDent => {
@@ -105,19 +305,38 @@ impl<'de> Iterator for Lexer<'de> {
                     for i in 0..rst.len() {
                         whole.push(rst[i]);
                     }
+                    let starting_pos = self.byte - 1;
                     self.byte += whole.len() - 1;
                     self.rest = &self.whole[self.byte..];
 
-                    return Some(Ok(Token::VarIdentifier(
-                        &self.whole[self.byte - whole.len()..self.byte],
-                    )));
+                    return Some(Ok(TokenInfo {
+                        token: Token::VarIdentifier(
+                            &self.whole[self.byte - whole.len()..self.byte],
+                        ),
+                        pos: starting_pos,
+                        line: self.line_number,
+                    }));
                 }
-                Started::Character => return Some(Ok(Token::Char(c))),
+                Started::Character => {
+                    return Some(Ok(TokenInfo {
+                        token: Token::Char(c),
+                        pos: self.byte - 1,
+                        line: self.line_number,
+                    }))
+                }
                 Started::Input => {
                     if c.is_digit(10) {
-                        return Some(Ok(Token::InputNumber(c.to_digit(10).unwrap() as usize)));
+                        return Some(Ok(TokenInfo {
+                            token: Token::InputNumber(c.to_digit(10).unwrap() as usize),
+                            pos: self.byte - 1,
+                            line: self.line_number,
+                        }));
                     } else {
-                        return Some(Ok(Token::InputChar(c)));
+                        return Some(Ok(TokenInfo {
+                            token: Token::InputChar(c),
+                            pos: self.byte - 1,
+                            line: self.line_number,
+                        }));
                     }
                 }
                 Started::Number => {
@@ -127,22 +346,27 @@ impl<'de> Iterator for Lexer<'de> {
                     for i in 0..rst.len() {
                         whole.push(rst[i]);
                     }
+                    let starting_pos = self.byte - 1;
                     self.byte += whole.len() - 1;
                     self.rest = &self.whole[self.byte..];
                     let whole = whole.iter().collect::<String>();
 
-                    return Some(Ok(Token::Number(whole.parse::<usize>().unwrap())));
+                    return Some(Ok(TokenInfo {
+                        token: Token::Number(whole.parse::<usize>().unwrap()),
+                        pos: starting_pos,
+                        line: self.line_number,
+                    }));
                 }
             };
-            return None;
         }
+        return None;
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token<'de> {
     EOF,
-    //Whitespace,
+    Whitespace,
     DollarSign,         //         $
     Addition,           //         +
     Substraction,       //         -
@@ -180,7 +404,7 @@ impl<'de> Display for Token<'de> {
         match self {
             Token::EOF => write!(f, "EOF->end of file"),
             Token::DollarSign => write!(f, "DollarSign->$"),
-            //Token::Whitespace => write!(f, "Whitespace->Whitespace"),
+            Token::Whitespace => write!(f, "Whitespace->Whitespace"),
             Token::Addition => write!(f, "Addition->+"),
             Token::Substraction => write!(f, "Substraction->-"),
             Token::Multiplication => write!(f, "Multiplication->*"),

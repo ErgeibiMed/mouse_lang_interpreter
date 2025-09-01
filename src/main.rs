@@ -1,7 +1,6 @@
 use std::{env, fs, process};
 
-mod lexparse;
-use lexparse::lexer::Lexer;
+use mouse_lang_interpreter::lexparse::lexer::Lexer;
 
 fn main() -> Result<(), ()> {
     let args = env::args().collect::<Vec<String>>();
@@ -21,8 +20,21 @@ fn main() -> Result<(), ()> {
     let tokens = lexer.lex();
     for token in tokens {
         match token {
-            Ok(t) => println!("{t}"),
-            Err(_) => println!("error occured "),
+            Ok(t) => {
+                println!(
+                    "token {tt} at line {line}:pos {pos}",
+                    tt = t.token,
+                    line = t.line,
+                    pos = t.pos
+                )
+            }
+
+            Err(e) => println!(
+                "error {err}occured while lexing at line {line}:pos{pos}  ",
+                err = e.lex_err,
+                line = e.line,
+                pos = e.pos,
+            ),
         }
     }
 
