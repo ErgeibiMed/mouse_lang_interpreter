@@ -18,8 +18,9 @@
 ```
 
 ## Usage
- - cargo run filename
-
+```console
+ $ cargo run <filename>
+```
 
 ## License
 Please read the [LICENSE-MIT](https://github.com/ErgeibiMed/mouse_lang_interpreter/blob/main/LICENSE.txt) file in this repository for more information.
