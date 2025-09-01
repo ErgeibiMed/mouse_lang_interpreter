@@ -20,8 +20,6 @@
 ## Usage
  - cargo run filename
 
-## Dependencies
- [anyhow](https://crates.io/crates/anyhow)
 
 ## License
 Please read the [LICENSE-MIT](https://github.com/ErgeibiMed/mouse_lang_interpreter/blob/main/LICENSE.txt) file in this repository for more information.
