@@ -1,6 +1,6 @@
 use std::{env, fs, process};
 
-use mouse_lang_interpreter::lexparse::lexer::Lexer;
+use msl_interpreter::lexparse::lexer::Lexer;
 
 fn main() -> Result<(), ()> {
     let args = env::args().collect::<Vec<String>>();

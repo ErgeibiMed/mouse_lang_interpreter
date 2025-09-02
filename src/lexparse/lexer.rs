@@ -318,11 +318,15 @@ impl<'de> Iterator for Lexer<'de> {
                     }));
                 }
                 Started::Character => {
+                    let car = self.whole[c.len_utf8()..c.len_utf8() + 1]
+                        .chars()
+                        .next()
+                        .unwrap();
                     return Some(Ok(TokenInfo {
-                        token: Token::Char(c),
+                        token: Token::Char(car),
                         pos: self.byte - 1,
                         line: self.line_number,
-                    }))
+                    }));
                 }
                 Started::Input => {
                     if c.is_digit(10) {

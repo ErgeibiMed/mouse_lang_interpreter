@@ -1,4 +1,4 @@
-use mouse_lang_interpreter::lexparse::*;
+use msl_interpreter::lexparse::*;
 
 #[test]
 fn lex_whitspace() {
@@ -264,28 +264,35 @@ fn lex_symbol_var_identifier() {
         assert_eq!(token.token, lexer::Token::VarIdentifier(var_ident));
     }
 }
-////continue from here
-//#[test]
-//fn lex_symbol_literal() {
-//    let sourcefile = format!("\"This is a string literal\"");
-//    let start = 0;
-//    let end = sourcefile[start + 1..].find('"').unwrap();
-//    let literal = &sourcefile[start..end + 1];
-//
-//    let mut lexer = lexer::Lexer::new(&sourcefile);
-//    let tokens = lexer.lex();
-//    if let Ok(token) = tokens.first().unwrap() {
-//        assert_eq!(token.token, lexer::Token::Literal(literal));
-//    }
-//}
-//#[test]
-//fn lex_symbol_Char(){
-//let sourcefile=String::from('Char');
-//let mut lexer = lexer::Lexer::new(&sourcefile);
-//let tokens=lexer.lex();
-//if let Ok(token)=tokens.first().unwrap() {
-//assert_eq!(token.token,lexer::Token::Char);
-//}}
+
+#[test]
+fn lex_symbol_literal() {
+    let sourcefile = format!("\"This is a string literal\"");
+    let start = sourcefile.chars().next().unwrap().len_utf8();
+    let end = sourcefile[start + 1..].find('"').unwrap();
+    let end2 = sourcefile[end..].find('"').unwrap();
+    let literal = &sourcefile[start..end + end2];
+
+    let mut lexer = lexer::Lexer::new(&sourcefile);
+    let tokens = lexer.lex();
+    if let Ok(token) = tokens.first().unwrap() {
+        assert_eq!(token.token, lexer::Token::Literal(literal));
+    }
+}
+
+#[test]
+fn lex_symbol_character() {
+    let sourcefile = String::from("\'a");
+    let car = sourcefile[1..].chars().next().unwrap();
+    let mut lexer = lexer::Lexer::new(&sourcefile);
+    let tokens = lexer.lex();
+    if let Ok(token) = tokens.first().unwrap() {
+        println!("{}", token.token);
+        println!("{}", lexer::Token::Char(car));
+        assert_eq!(token.token, lexer::Token::Char(car));
+    }
+}
+
 //#[test]
 //fn lex_symbol_Number(){
 //let sourcefile=String::from('Number');
