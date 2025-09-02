@@ -243,27 +243,6 @@ fn lex_symbol_tilde() {
         assert_eq!(token.token, lexer::Token::Tilde(&comment));
     }
 }
-#[test]
-fn lex_symbol_var_identifier() {
-    let sourcefile = String::from("kfa55d41d7*g");
-
-    let chars = sourcefile.chars();
-    let mut whole: Vec<char> = Vec::new();
-    let rst = chars
-        .take_while(|v| v.is_digit(10) || v.is_alphabetic())
-        .collect::<Vec<char>>();
-    for i in 0..rst.len() {
-        whole.push(rst[i]);
-    }
-    let start = 0;
-    let end_byte = start + whole.len();
-    let var_ident = &sourcefile[start..end_byte];
-    let mut lexer = lexer::Lexer::new(&sourcefile);
-    let tokens = lexer.lex();
-    if let Ok(token) = tokens.first().unwrap() {
-        assert_eq!(token.token, lexer::Token::VarIdentifier(var_ident));
-    }
-}
 
 #[test]
 fn lex_symbol_literal() {
@@ -281,39 +260,43 @@ fn lex_symbol_literal() {
 }
 
 #[test]
-fn lex_symbol_character() {
-    let sourcefile = String::from("\'a");
-    let car = sourcefile[1..].chars().next().unwrap();
+fn lex_symbol_apostrophe() {
+    let sourcefile = String::from("\'");
     let mut lexer = lexer::Lexer::new(&sourcefile);
     let tokens = lexer.lex();
     if let Ok(token) = tokens.first().unwrap() {
-        println!("{}", token.token);
-        println!("{}", lexer::Token::Char(car));
-        assert_eq!(token.token, lexer::Token::Char(car));
+        assert_eq!(token.token, lexer::Token::Apostrophe);
     }
 }
 
-//#[test]
-//fn lex_symbol_Number(){
-//let sourcefile=String::from('Number');
-//let mut lexer = lexer::Lexer::new(&sourcefile);
-//let tokens=lexer.lex();
-//if let Ok(token)=tokens.first().unwrap() {
-//assert_eq!(token.token,lexer::Token::Number);
-//}}
-//#[test]
-//fn lex_symbol_InputChar(){
-//let sourcefile=String::from('InputChar');
-//let mut lexer = lexer::Lexer::new(&sourcefile);
-//let tokens=lexer.lex();
-//if let Ok(token)=tokens.first().unwrap() {
-//assert_eq!(token.token,lexer::Token::InputChar);
-//}}
-//#[test]
-//fn lex_symbol_InputNumber(){
-//let sourcefile=String::from('InputNumber');
-//let mut lexer = lexer::Lexer::new(&sourcefile);
-//let tokens=lexer.lex();
-//if let Ok(token)=tokens.first().unwrap() {
-//assert_eq!(token.token,lexer::Token::InputNumber);
-//}}
+#[test]
+fn lex_symbol_question_mark() {
+    let sourcefile = String::from("?");
+    let mut lexer = lexer::Lexer::new(&sourcefile);
+    let tokens = lexer.lex();
+    if let Ok(token) = tokens.first().unwrap() {
+        assert_eq!(token.token, lexer::Token::QuestionMark);
+    }
+}
+
+#[test]
+fn lex_symbol_number() {
+    let sourcefile = String::from("1235");
+    let num = sourcefile.parse().unwrap();
+    let mut lexer = lexer::Lexer::new(&sourcefile);
+    let tokens = lexer.lex();
+    if let Ok(token) = tokens.first().unwrap() {
+        assert_eq!(token.token, lexer::Token::Number(num));
+    }
+}
+
+#[test]
+fn lex_symbol_char() {
+    let sourcefile = String::from('a');
+    let car = sourcefile.parse().unwrap();
+    let mut lexer = lexer::Lexer::new(&sourcefile);
+    let tokens = lexer.lex();
+    if let Ok(token) = tokens.first().unwrap() {
+        assert_eq!(token.token, lexer::Token::Char(car));
+    }
+}
